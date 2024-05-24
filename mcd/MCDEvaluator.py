@@ -1,6 +1,28 @@
+import UtilsMCD
 import tensorflow as tf
 import numpy as np
 from tqdm import tqdm
+import MonteCarloDropoutModel
+
+from enum import Enum
+
+class RichDLL(Enum):
+    RichDLLe = 1
+    RichDLLk = 2
+    RichDLLmu = 3
+    RichDLLp = 4
+    RichDLLbt = 5
+
+    @staticmethod
+    def get_by_alternate_name(name):
+        mapping = {
+            "pion": RichDLL.RichDLLe,
+            "kaon": RichDLL.RichDLLk,
+            "muon": RichDLL.RichDLLmu,
+            "proton": RichDLL.RichDLLp,
+            "tresshold": RichDLL.RichDLLbt
+        }
+        return mapping.get(name, None)
 
 
 class MCDEvaluator:
@@ -10,9 +32,6 @@ class MCDEvaluator:
         self.num_reps = num_reps
         self.sub_sample_size = sub_sample_size
 
-    def subsample_dataset(self, features, targets, size):
-        indices = np.random.choice(len(features), size, replace=False)
-        return features[indices], targets[indices]
 
     def evaluate_model(self, model, particle, dropout):
         generator = model.get_generator()
@@ -29,7 +48,7 @@ class MCDEvaluator:
                     ensemble_inferences[f'{ensemble_size}'] = {key: inference_predictions}
 
                     # Step 1: Draw a sample of the datasets
-                    x_sample, y_sample = self.subsample_dataset(self.datasets[particle]['feats_val'],
+                    x_sample, y_sample = UtilsMCD.subsample_dataset(self.datasets[particle]['feats_val'],
                                                                 self.datasets[particle]['targets_val'],
                                                                 self.sub_sample_size)
 
@@ -63,6 +82,40 @@ class MCDEvaluator:
             )
         return prediction_list
 
+
+def test(debug=False):
+    if debug:
+        CHECKPOINT_BASE = 'checkpoints/'
+        CKPT_NUMBER = 'ckpt-21'
+        NUM_REPS = 10
+        PARTICLES = ["muon"]
+        DROPOUTS = [0.05, 0.10]
+        SUB_SAMPLE_SIZE = .3
+
+        # If this cell is run more than once, previous models are garbage collected and a Checkpoint warning is displayed, disregard it.
+        models = dict()
+        datasets = {particle: UtilsMCD.load_particle_datasets(particle) for particle in PARTICLES}
+        for particle in PARTICLES:
+          for dp in DROPOUTS:
+            # Test model creation with debug mode on
+            models[f"{particle}_{dp}"] = MonteCarloDropoutModel.MonteCarloDropoutModel(
+              particle,
+              dropout_rate=dp,
+              checkpoint_base=CHECKPOINT_BASE,
+              checkpoint_file=CKPT_NUMBER,
+              debug=True
+            )
+          prediction_list = []
+
+          mcdEvaluator = MCDEvaluator(models, datasets,NUM_REPS,SUB_SAMPLE_SIZE)
+          prediction_list=mcdEvaluator.evaluate_all_models()
+          print(prediction_list)
+
+
+
+# Run tests
+if __name__ == '__main__':
+    test(True)
 
 
 
