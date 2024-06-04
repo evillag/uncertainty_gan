@@ -162,3 +162,5 @@ cython_debug/
 # Repository based
 experiments/
 src/
+log_dir_tmpfit/
+outputs/
