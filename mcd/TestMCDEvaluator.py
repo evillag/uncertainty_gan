@@ -1,10 +1,10 @@
-import tensorflow as tf
-import numpy as np
-from tqdm import tqdm
 import unittest
 
+import numpy as np
+import tensorflow as tf
+
 # Example usage:
-# Define dummy models and datasets for demonstration purposes
+# Define dummy test_bench and datasets for demonstration purposes
 from MCDEvaluator import MCDEvaluator
 
 
@@ -30,6 +30,7 @@ sub_sample_size = 100
 evaluator = MCDEvaluator(models, datasets, num_reps, sub_sample_size)
 results = evaluator.evaluate_all_models()
 print(results)
+
 
 # Tests
 class TestMCDEvaluator(unittest.TestCase):

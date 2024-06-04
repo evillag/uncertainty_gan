@@ -1,10 +1,11 @@
-import UtilsMCD
-import tensorflow as tf
-import numpy as np
-from tqdm import tqdm
-import MonteCarloDropoutModel
-
 from enum import Enum
+
+import tensorflow as tf
+from tqdm import tqdm
+
+from test_bench import get_checkpoint_name, load_particle_datasets, subsample_dataset
+from test_bench.model import MonteCarloDropoutModel
+
 
 class RichDLL(Enum):
     RichDLLe = 1
@@ -32,25 +33,25 @@ class MCDEvaluator:
         self.num_reps = num_reps
         self.sub_sample_size = sub_sample_size
 
-
     def evaluate_model(self, model, particle, dropout):
         generator = model.get_generator()
         generator.ensemble_inference_mode()
         ensemble_inferences = dict()
         predictions_variance = []
+        predictions_mean = []
 
         print(f"Generating predictions with model for particle {particle.upper()} and dropout {dropout}")
-        for ensemble_size in tqdm(range(1, 11)):  # Assuming ENSEMBLES ranges from 1 to 10
+        for ensemble_size in tqdm(range(1, 11)):  # Assuming ensemble sizes ranges from 1 to 10
             inference_predictions = dict()
             for rep in range(self.num_reps):
                 try:
                     key = f'{rep}'
                     ensemble_inferences[f'{ensemble_size}'] = {key: inference_predictions}
 
-                    # Step 1: Draw a sample of the datasets
-                    x_sample, y_sample = UtilsMCD.subsample_dataset(self.datasets[particle]['feats_val'],
-                                                                self.datasets[particle]['targets_val'],
-                                                                self.sub_sample_size)
+                    # Draw a sample of the datasets
+                    x_sample, y_sample = subsample_dataset(self.datasets[particle]['feats_val'],
+                                                           self.datasets[particle]['targets_val'],
+                                                           self.sub_sample_size)
 
                     inference_predictions[key] = {
                         'predicted_values': None,
@@ -63,13 +64,16 @@ class MCDEvaluator:
 
                     predicted_values = tf.convert_to_tensor(prediction_list)
 
-                    # Step 2: Calculate variance of predictions
+                    # Calculate variance of predictions
                     predictions_variance.append(tf.math.reduce_variance(predicted_values, axis=0))
+
+                    # Predictions mean
+                    predictions_mean.append(tf.math.reduce_mean(predicted_values, axis=0))
 
                 except Exception as error:
                     print(f'Error processing {particle} at dropout {dropout}: {error}')
 
-        return predictions_variance
+        return predictions_variance, predictions_mean
 
     def evaluate_all_models(self):
         prediction_list = []
@@ -85,37 +89,37 @@ class MCDEvaluator:
 
 def test(debug=False):
     if debug:
-        CHECKPOINT_BASE = 'checkpoints/'
-        CKPT_NUMBER = 'ckpt-21'
-        NUM_REPS = 10
-        PARTICLES = ["muon"]
-        DROPOUTS = [0.05, 0.10]
-        SUB_SAMPLE_SIZE = .3
+        checkpoint_dp = '0.01'
+        checkpoint_base = '../../checkpoints/'
+        dropout_type = 'bernoulli_structured'
+        data_dir = '../../data/rich/'
+        num_reps = 10
+        particles = ["muon"]
+        dropouts = [0.05, 0.10]
+        sub_sample_size = .3
 
-        # If this cell is run more than once, previous models are garbage collected and a Checkpoint warning is displayed, disregard it.
+        # If this cell is run more than once, previous test_bench are garbage collected and a Checkpoint warning is
+        # displayed, disregard it.
         models = dict()
-        datasets = {particle: UtilsMCD.load_particle_datasets(particle) for particle in PARTICLES}
-        for particle in PARTICLES:
-          for dp in DROPOUTS:
-            # Test model creation with debug mode on
-            models[f"{particle}_{dp}"] = MonteCarloDropoutModel.MonteCarloDropoutModel(
-              particle,
-              dropout_rate=dp,
-              checkpoint_base=CHECKPOINT_BASE,
-              checkpoint_file=CKPT_NUMBER,
-              debug=True
-            )
-          prediction_list = []
+        datasets = {particle: load_particle_datasets(particle, data_dir) for particle in particles}
+        for particle in particles:
+            for dp in dropouts:
+                # Test model creation with debug mode on
+                models[f"{particle}_{dp}"] = MonteCarloDropoutModel(
+                    particle,
+                    dropout_rate=dp,
+                    checkpoint_dir=checkpoint_base + get_checkpoint_name(particle, checkpoint_dp, dropout_type),
+                    debug=True
+                )
+            mcdEvaluator = MCDEvaluator(models, datasets, num_reps, sub_sample_size)
+            prediction_list = mcdEvaluator.evaluate_all_models()
 
-          mcdEvaluator = MCDEvaluator(models, datasets,NUM_REPS,SUB_SAMPLE_SIZE)
-          prediction_list=mcdEvaluator.evaluate_all_models()
-          print(prediction_list)
-
+            for i, pred in enumerate(prediction_list):
+                print('{i} - Predictions Variance and Values:')
+                print(f'Variance:\n{pred[0]}')
+                print(f'Value:\n{pred[1]}')
 
 
 # Run tests
 if __name__ == '__main__':
     test(True)
-
-
-
