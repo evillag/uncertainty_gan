@@ -1,10 +1,10 @@
-import tensorflow as tf
-import numpy as np
-from tqdm import tqdm
 import unittest
 
+import numpy as np
+import tensorflow as tf
+
 # Example usage:
-# Define dummy models and datasets for demonstration purposes
+# Define dummy test_bench and datasets for demonstration purposes
 from MCDEvaluator import MCDEvaluator
 
 
@@ -31,6 +31,7 @@ evaluator = MCDEvaluator(models, datasets, num_reps, sub_sample_size)
 results = evaluator.evaluate_all_models()
 print(results)
 
+
 # Tests
 class TestMCDEvaluator(unittest.TestCase):
 
@@ -55,7 +56,7 @@ class TestMCDEvaluator(unittest.TestCase):
 
     def test_evaluate_model(self):
         dummy_model = DummyModel()
-        variance = self.evaluator.evaluate_model(dummy_model, 'dummy', 0.1)
+        variance = evaluate_model(dummy_model, 'dummy', 0.1)
         self.assertGreater(len(variance), 0)
 
     def test_evaluate_all_models(self):
@@ -64,12 +65,12 @@ class TestMCDEvaluator(unittest.TestCase):
 
     def test_inference_predictions_structure(self):
         dummy_model = DummyModel()
-        variance = self.evaluator.evaluate_model(dummy_model, 'dummy', 0.1)
+        variance = evaluate_model(dummy_model, 'dummy', 0.1)
         self.assertIsInstance(variance, list)
 
     def test_prediction_variance_calculation(self):
         dummy_model = DummyModel()
-        variance = self.evaluator.evaluate_model(dummy_model, 'dummy', 0.1)
+        variance = evaluate_model(dummy_model, 'dummy', 0.1)
         self.assertTrue(all(tf.reduce_mean(v).numpy() >= 0 for v in variance))
 
 
