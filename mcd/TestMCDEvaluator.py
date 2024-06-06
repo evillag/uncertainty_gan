@@ -56,7 +56,7 @@ class TestMCDEvaluator(unittest.TestCase):
 
     def test_evaluate_model(self):
         dummy_model = DummyModel()
-        variance = self.evaluator.evaluate_model(dummy_model, 'dummy', 0.1)
+        variance = evaluate_model(dummy_model, 'dummy', 0.1)
         self.assertGreater(len(variance), 0)
 
     def test_evaluate_all_models(self):
@@ -65,12 +65,12 @@ class TestMCDEvaluator(unittest.TestCase):
 
     def test_inference_predictions_structure(self):
         dummy_model = DummyModel()
-        variance = self.evaluator.evaluate_model(dummy_model, 'dummy', 0.1)
+        variance = evaluate_model(dummy_model, 'dummy', 0.1)
         self.assertIsInstance(variance, list)
 
     def test_prediction_variance_calculation(self):
         dummy_model = DummyModel()
-        variance = self.evaluator.evaluate_model(dummy_model, 'dummy', 0.1)
+        variance = evaluate_model(dummy_model, 'dummy', 0.1)
         self.assertTrue(all(tf.reduce_mean(v).numpy() >= 0 for v in variance))
 
 

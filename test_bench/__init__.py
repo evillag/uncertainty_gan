@@ -25,7 +25,6 @@ def split_by_line(df_train, df_test):
 def load_particle_datasets(particle, data_dir='../data/rich/'):
     """ The returned dictionary has this format:
         {
-          "<particle_name>": {
             'data_train': data_train,
             'data_val': data_val,
             'scaler': scaler,
@@ -33,7 +32,6 @@ def load_particle_datasets(particle, data_dir='../data/rich/'):
             'targets_train': targets_train,
             'feats_val': feats_val,
             'targets_val': targets_val
-          }
         }
     """
     data_train, data_val, scaler = get_merged_typed_dataset(data_dir, particle, dtype=np.float32, log=True,
