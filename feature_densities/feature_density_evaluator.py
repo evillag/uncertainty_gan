@@ -109,12 +109,12 @@ def calculate_normalized_likelihoods(embeddings, kde_fit_functions):
     likelihoods = np.zeros((n_samples, n_features))
 
     x = np.linspace(embeddings.min(), embeddings.max(), 10000)
-    kde_max_values = [kde_fn(x).max() for kde_fn in kde_fit_functions]
 
-    for i in trange(n_samples):
-        for j in range(n_features):
+    for j in trange(n_features):
+        kde_max = kde_fit_functions[j](x).max()
+        for i in range(n_samples):
             point = embeddings[i, j]
-            likelihoods[i, j] = kde_fit_functions[j](point) / kde_max_values[j]
+            likelihoods[i, j] = kde_fit_functions[j](point) / kde_max
     return tf.convert_to_tensor(likelihoods)
 
 
