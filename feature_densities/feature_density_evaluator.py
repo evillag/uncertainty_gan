@@ -37,7 +37,7 @@ def integration_likelihood(embeddings, kde_fit_functions, epsilon=0.01):
         for j in range(n_features):
             point = embeddings[i, j]
             likelihoods[i, j] = kde_fit_functions[j].integrate_box_1d(point - epsilon, point + epsilon)
-    return likelihoods
+    return tf.convert_to_tensor(likelihoods)
 
 
 def tf_integration_likelihood(embeddings, kde_fit_functions, epsilon=0.01):
@@ -92,7 +92,7 @@ def tf_calculate_normalized_likelihoods(embeddings, kde_fit_functions):
 
 
 # previously know as the range_mapping_likelihood.
-def numpy_calculate_normalized_likelihoods(embeddings, kde_fit_functions):
+def calculate_normalized_likelihoods(embeddings, kde_fit_functions):
     """ Numpy version: This function calculates the likelihood of a given embedding point in the fitted KDE functions by
     estimating the value of the KDE function at the point divided by the maximum value of the KDE function for the KDE´s
     feature.
@@ -115,7 +115,7 @@ def numpy_calculate_normalized_likelihoods(embeddings, kde_fit_functions):
         for j in range(n_features):
             point = embeddings[i, j]
             likelihoods[i, j] = kde_fit_functions[j](point) / kde_max_values[j]
-    return likelihoods
+    return tf.convert_to_tensor(likelihoods)
 
 
 def create_embeddings_model(original_model: MonteCarloDropoutModel, embedding_layer=EMBEDDING_LAYER) -> Model:
@@ -153,9 +153,9 @@ def evaluate_model(model: MonteCarloDropoutModel, x_sample, known_embeddings=Non
     print('Estimating sample´s feature densities')
     feature_densities = tf.constant(np.ones((x_sample.shape[0], 1)))
     if likelihood_method == 'integration':
-        feature_densities = tf_integration_likelihood(sample_embeddings, kde_fit_functions)
+        feature_densities = integration_likelihood(sample_embeddings, kde_fit_functions)
     elif likelihood_method == 'normalized':
-        feature_densities = tf_calculate_normalized_likelihoods(sample_embeddings, kde_fit_functions)
+        feature_densities = calculate_normalized_likelihoods(sample_embeddings, kde_fit_functions)
 
     reduced_feature_densities = tf.math.reduce_mean(feature_densities, axis=1)
     return 1.0 - reduced_feature_densities, sample_predictions
