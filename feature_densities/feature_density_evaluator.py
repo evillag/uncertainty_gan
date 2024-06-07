@@ -27,7 +27,7 @@ def integration_likelihood(embeddings, kde_fit_functions, epsilon=0.01):
         - kde_fit_functions: list: list of gaussian_kde functions fitted to the embeddings
         - epsilon: float: epsilon value to be used in the integration
     Returns:
-        - likelihoods: np.array: likelihoods of the points based on the KDE probability density functions.
+        - likelihoods: tensorflow.Tensor: likelihoods of the points based on the KDE probability density functions.
     """
     n_samples = embeddings.shape[0]
     n_features = embeddings.shape[1]
@@ -49,7 +49,7 @@ def tf_integration_likelihood(embeddings, kde_fit_functions, epsilon=0.01):
         - kde_fit_functions: list: list of gaussian_kde functions fitted to the embeddings
         - epsilon: float: epsilon value to be used in the integration
     Returns:
-        - likelihoods: np.array: likelihoods of the points based on the KDE probability density functions.
+        - likelihoods: tensorflow.Tensor: likelihoods of the points based on the KDE probability density functions.
     """
     likelihoods = []
     n_features = embeddings.shape[1]
@@ -73,7 +73,7 @@ def tf_calculate_normalized_likelihoods(embeddings, kde_fit_functions):
         - embeddings: np.array: embeddings to be evaluated
         - kde_fit_functions: list: list of gaussian_kde functions fitted to the embeddings
     Returns:
-        - likelihoods: np.array: likelihoods of the points based on the KDE probability density functions.
+        - likelihoods: tensorflow.Tensor: likelihoods of the points based on the KDE probability density functions.
     """
     likelihoods = []
     n_features = embeddings.shape[1]
@@ -101,7 +101,7 @@ def calculate_normalized_likelihoods(embeddings, kde_fit_functions):
         - embeddings: np.array: embeddings to be evaluated
         - kde_fit_functions: list: list of gaussian_kde functions fitted to the embeddings
     Returns:
-        - likelihoods: np.array: likelihoods of the points based on the KDE probability density functions.
+        - likelihoods: tensorflow.Tensor: likelihoods of the points based on the KDE probability density functions.
     """
     n_samples = embeddings.shape[0]
     n_features = embeddings.shape[1]
@@ -139,7 +139,8 @@ def evaluate_model(model: MonteCarloDropoutModel, x_sample, known_embeddings=Non
         - known_embeddings: np.array: embeddings already known to the model, likely the embeddings from the training set
         - unc_method: str: method to be used to calculate the uncertainty. Options are 'integration' and 'normalized'
     Returns:
-        - np.array: uncertainty score (complement of likelihood) for the sample
+        - Tuple(tensorflow.Tensor, np.array): Tuple with uncertainty score (complement of likelihood) for the sample and
+        the generated targets
     """
     print('Generating an embeddings model')
     embeddings_model = create_embeddings_model(model)
