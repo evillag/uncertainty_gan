@@ -1,5 +1,6 @@
 from enum import Enum
 
+import numpy as np
 import tensorflow as tf
 from tqdm import tqdm, trange
 
@@ -43,11 +44,16 @@ def evaluate_model(model, x_sample, ensemble_size=10):
 
     predicted_values = tf.convert_to_tensor(prediction_list)
 
-    # Calculate variance of predictions
-    ensemble_variance = tf.math.reduce_variance(predicted_values, axis=0)
-
-    # Predictions mean
-    ensemble_mean = tf.math.reduce_mean(predicted_values, axis=0)
+    try:
+        # Calculate variance of predictions
+        ensemble_variance = tf.math.reduce_variance(predicted_values, axis=0)
+        # Predictions mean
+        ensemble_mean = tf.math.reduce_mean(predicted_values, axis=0)
+    except Exception as e:
+        print(f"ResourceExhaustedError:  {e}")
+        print("Calculating variance and mean using numpy on CPU. This may take a while...")
+        ensemble_variance = tf.convert_to_tensor(np.var(prediction_list, axis=0))
+        ensemble_mean = tf.convert_to_tensor(np.mean(prediction_list, axis=0))
 
     return ensemble_variance, ensemble_mean
 
