@@ -32,7 +32,11 @@ def evaluate_model(model, x_sample, ensemble_size=10):
         ensemble_size += 1
 
     generator = model.get_generator()
-    generator.ensemble_inference_mode()
+
+    if mode == 'ensemble_inference':
+      generator.ensemble_inference_mode()
+    else:
+      generator.single_model_inference_mode()
 
     print(f"Generating ensemble({ensemble_size}) predictions")
     for _ in trange(ensemble_size):
