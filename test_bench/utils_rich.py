@@ -3,17 +3,14 @@
     https://github.com/yandexdataschool/RICH-GAN/
 """
 
-import os
 import glob
+import os
+from time import time
 
 import numpy as np
 import pandas as pd
-import tensorflow as tf
-from time import time
-
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import QuantileTransformer, StandardScaler
-
 
 dll_columns = ['RichDLLe', 'RichDLLk', 'RichDLLmu', 'RichDLLp', 'RichDLLbt']
 raw_feature_columns = ['Brunel_P', 'Brunel_ETA', 'nTracks_Brunel']
@@ -54,8 +51,8 @@ def split(data, test_size):
     data_val, data_test = train_test_split(
         data_val, test_size=test_size, random_state=1812)
     return data_train.reset_index(drop=True), \
-        data_val  .reset_index(drop=True), \
-        data_test .reset_index(drop=True)
+        data_val.reset_index(drop=True), \
+        data_test.reset_index(drop=True)
 
 
 def scale_pandas(dataframe, scaler):
@@ -63,17 +60,16 @@ def scale_pandas(dataframe, scaler):
 
 
 def get_merged_typed_dataset(
-    data_dir, 
-    particle_type, 
-    test_size=0.5, 
-    dtype=None, 
-    log=False, 
-    n_quantiles=100000, 
-    sample_fn=None
+        data_dir,
+        particle_type,
+        test_size=0.5,
+        dtype=None,
+        log=False,
+        n_quantiles=100000,
+        sample_fn=None
 ):
-
     file_lists = parse_file_lists(data_dir)
-    
+
     file_list = file_lists.get(particle_type, None)
 
     if file_list is None:
@@ -131,9 +127,9 @@ def get_merged_typed_dataset(
         data_val = data_val.astype(dtype, copy=False)
         data_val_orig = data_val_orig.astype(dtype, copy=False)
 
-
     if sample_fn is not None:
-        data_train, data_train_orig, data_val, data_val_orig = sample_fn(data_train, data_train_orig, data_val, data_val_orig)
+        data_train, data_train_orig, data_val, data_val_orig = sample_fn(data_train, data_train_orig, data_val,
+                                                                         data_val_orig)
 
     return data_train, data_val, scaler, data_train_orig, data_val_orig
 
@@ -143,10 +139,10 @@ def get_all_particles_dataset(data_dir, test_size=0.5, dtype=None, log=False, n_
     data_val_all = []
     scaler_all = {}
     for index, particle in enumerate(particle_types):
-        data_train, data_val, scaler = get_merged_typed_dataset(
-            data_dir, particle, test_size=test_size, 
+        data_train, data_val, scaler, _, _ = get_merged_typed_dataset(
+            data_dir, particle, test_size=test_size,
             dtype=dtype, log=log, n_quantiles=n_quantiles)
-            
+
         ohe_table = pd.DataFrame(np.zeros((len(data_train), len(particle_types))),
                                  columns=['is_{}'.format(i) for i in particle_types])
         ohe_table['is_{}'.format(particle)] = 1

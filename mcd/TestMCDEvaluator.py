@@ -6,13 +6,16 @@ import tensorflow as tf
 # Example usage:
 # Define dummy test_bench and datasets for demonstration purposes
 from MCDEvaluator import MCDEvaluator
+from mcd.MCDEvaluator import evaluate_model
 
 
 class DummyModel:
     def get_generator(self):
         return lambda x: tf.constant([[0.5]] * len(x), dtype=tf.float32)
+
     def ensemble_inference_mode(self):
         pass
+
 
 models = {
     'muon_0.1': DummyModel(),

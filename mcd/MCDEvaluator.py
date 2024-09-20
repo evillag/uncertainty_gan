@@ -26,7 +26,7 @@ class RichDLL(Enum):
         return mapping.get(name, None)
 
 
-def evaluate_model(model, x_sample, ensemble_size=10):
+def evaluate_model(model, x_sample, ensemble_size=10, mode='ensemble_inference'):
     prediction_list = []
     if ensemble_size == 1:
         ensemble_size += 1
@@ -34,9 +34,9 @@ def evaluate_model(model, x_sample, ensemble_size=10):
     generator = model.get_generator()
 
     if mode == 'ensemble_inference':
-      generator.ensemble_inference_mode()
+        generator.ensemble_inference_mode()
     else:
-      generator.single_model_inference_mode()
+        generator.single_model_inference_mode()
 
     print(f"Generating ensemble({ensemble_size}) predictions")
     for _ in trange(ensemble_size):
