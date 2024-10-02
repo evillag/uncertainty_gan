@@ -1,4 +1,4 @@
-from tensorflow.keras.optimizers.legacy import RMSprop
+from tf_keras.optimizers.legacy import RMSprop
 
 from src.cramer_gan_trainer import CramerGANTrainer
 from src.models.gans.discriminators.fcn_disc import RICHDiscriminator

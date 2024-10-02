@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from keras import Model
+from tf_keras import Model
 
 from scipy.stats import gaussian_kde
 from tqdm import trange
