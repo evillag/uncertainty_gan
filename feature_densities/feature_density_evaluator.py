@@ -147,23 +147,34 @@ def create_embeddings_model(original_model: MonteCarloDropoutModel, embedding_la
     embeddings_model = Model(input_layer, [output_layer, generator.output])
     return embeddings_model
 
-
-def evaluate_model(model: MonteCarloDropoutModel, x_sample, known_embeddings, n_fit_samples=None, likelihood_method='integration'):
-    """ Arguments expected:
-        - model: keras model: model to be evaluated
-        - x_sample: np.array: sample to be evaluated
+def  generate_kde_fit_functions(known_embeddings, n_fit_samples=None):
+    """ This function fits KDE functions to known embeddings.
+    Arguments expected:
         - known_embeddings: np.array: embeddings already known to the model, likely the embeddings from the training set
         - n_fit_samples: int | None: number of samples used for KDE fitting. If None, uses all samples from embeddings.
-        - unc_method: str: method to be used to calculate the uncertainty. Options are 'integration' and 'normalized'
-    Returns:
-        - Tuple(tensorflow.Tensor, np.array): Tuple with uncertainty score (complement of likelihood) for the sample and
-        the generated targets
     """
-    print('Generating an embeddings model')
-    embeddings_model = create_embeddings_model(model)
-
     print('Fitting KDE functions to known embeddings')
     kde_fit_functions = fit_kde(known_embeddings, n_fit_samples)
+
+
+def evaluate_model(model: MonteCarloDropoutModel, x_sample, kde_fit_functions, likelihood_method='integration',
+                   known_embeddings=None, embedding_layer=EMBEDDING_LAYER):
+    """ This function evaluates a sample using the features densities uncertainty method.
+    Arguments expected:
+        - model: keras model: model to be evaluated.
+        - x_sample: np.array: sample to be evaluated.
+        - kde_fit_functions: list: list of gaussian_kde functions fitted to the embeddings.
+        - likelihood_method: str: method to be used to calculate the uncertainty. Options are 'integration' and
+          'normalized'.
+        - known_embeddings: np.array: embeddings already known to the model, likely the embeddings from the training set.
+          Required if the method is 'normalized'.
+        - embedding_layer: int: index of the layer to be used as embeddings.
+    Returns:
+        - Tuple(tensorflow.Tensor, np.array): Tuple with uncertainty score (complement of likelihood) for the sample and
+          the generated targets.
+    """
+    print('Generating an embeddings model')
+    embeddings_model = create_embeddings_model(model, embedding_layer)
 
     print('Calculating sample\'s embeddings')
     sample_embeddings, sample_predictions = embeddings_model.predict(x_sample)
