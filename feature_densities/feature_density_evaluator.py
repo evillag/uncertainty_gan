@@ -155,6 +155,7 @@ def  generate_kde_fit_functions(known_embeddings, n_fit_samples=None):
     """
     print('Fitting KDE functions to known embeddings')
     kde_fit_functions = fit_kde(known_embeddings, n_fit_samples)
+    return kde_fit_functions
 
 
 def evaluate_model(model: MonteCarloDropoutModel, x_sample, kde_fit_functions, likelihood_method='integration',
