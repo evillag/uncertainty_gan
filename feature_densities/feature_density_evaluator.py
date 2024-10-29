@@ -12,7 +12,7 @@ from test_bench.model import MonteCarloDropoutModel
 EMBEDDING_LAYER = 14  # Index is 14 because layer indexing starts from 0
 
 
-def scott_bandwidth(data, features=128):
+def scott_bandwidth(data, features=1):
     """Calculates the bandwidth for Kernel Density Estimation using Scott's Rule.
     
     Arguments:
