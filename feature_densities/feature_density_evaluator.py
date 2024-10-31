@@ -45,42 +45,14 @@ def gaussian_kernel(x_values, data, bandwidth):
     """
     n = tf.shape(data)[0]
 
-    diff = tf.expand_dims(x_values, axis=1) - data
+    diff = tf.abs(tf.expand_dims(x_values, axis=1) - data)
+    norm_diff = tf.norm(diff, axis=1, ord='euclidean', keepdims=True)
+    euclidean_diff = tf.tile(norm_diff, [1, diff.shape[1]]) 
 
-    density = tf.exp(-0.5 * (diff / bandwidth) ** 2) / (bandwidth * tf.sqrt(tf.constant(2 * np.pi, dtype=tf.float32)))
+    density = tf.exp(-0.5 * (diff / bandwidth) ** 2)
 
-    return tf.reduce_sum(density, axis=1) / tf.cast(n, tf.float32)
+    return tf.reduce_sum(density, axis=1) / tf.cast(n, tf.float32) * (bandwidth * tf.sqrt(tf.constant(2 * np.pi, dtype=tf.float32)))
 
-def get_kde_max(known_embeddings, n_samples=100, kde_max_resolution=10000, n_features=128):
-    """This function calculates the maximum value of the KDE function for the KDE's
-    feature used in the normalized likelihood function
-
-    Arguments expected:
-        - known_embeddings: np.array: given embeddings to calculate the kde function.
-        - n_samples: int: number of samples to use.
-        - kde_max_resolution: int: number of points computed to normalize output likelihoods.
-        - n_features: int: number of features to calculate.
-    Returns:
-        - kde_max: np.array: list of values of the maximum value of the KDE function for the KDE's
-          feature.
-    """
-
-    known_embeddingsT = known_embeddings.T
-    known_embeddings_tf = tf.convert_to_tensor(known_embeddingsT, dtype=tf.float32)
-
-
-    @tf.function
-    def mapFunction(j):
-       known_feature = tf.gather(known_embeddings_tf, j)
-       x = tf.linspace(tf.reduce_min(known_feature), tf.reduce_max(known_feature), kde_max_resolution)
-       data_slice = tf.gather(known_embeddings[:n_samples], j, axis=1)
-       
-       return tf.reduce_max(gaussian_kernel(x, data_slice, scott_bandwidth(data_slice)))
-
-    kde_max = tf.map_fn(mapFunction, tf.range(n_features), fn_output_signature=tf.float32)
-
-
-    return kde_max
 
 def fit_kde(embeddings, n_samples=100):
     """ This function calculates the likelihood of a given embedding point in the fitted KDE functions by estimating the
@@ -179,7 +151,7 @@ def tf_calculate_normalized_likelihoods(embeddings, kde_fit_functions):
 
 
 # previously know as the range_mapping_likelihood.
-def calculate_normalized_likelihoods(known_embeddings, embeddings, kde_max, n_samples=100):
+def calculate_normalized_likelihoods(known_embeddings, embeddings, n_samples=100):
     """ Numpy version: This function calculates the likelihood of a given embedding point in the fitted KDE functions by
     estimating the value of the KDE function at the point divided by the maximum value of the KDE function for the KDE's
     feature.
@@ -193,14 +165,16 @@ def calculate_normalized_likelihoods(known_embeddings, embeddings, kde_max, n_sa
     """
   
     embeddingsT = tf.transpose(tf.convert_to_tensor(embeddings, dtype=tf.float32))
-    known_embeddings = tf.convert_to_tensor(known_embeddings[:n_samples], dtype=tf.float32)
+    known_embeddings_shuffled = tf.random.shuffle(known_embeddings)[:n_samples]
+    known_embeddings = tf.convert_to_tensor(known_embeddings_shuffled, dtype=tf.float32)
     kde_max = tf.convert_to_tensor(kde_max, dtype=tf.float32)
 
     dataset = tf.data.Dataset.from_tensor_slices(tf.range(tf.shape(embeddingsT)[0]))
 
     @tf.function
     def myFunction(j):
-        result = gaussian_kernel(embeddingsT[j], known_embeddings[:, j], scott_bandwidth(known_embeddings[:, j])) / kde_max[j]
+        data_slice = tf.gather(known_embeddings, j, axis=1)
+        result = gaussian_kernel(embeddingsT[j], data_slice, scott_bandwidth(data_slice))
         return result
 
     # Aplicar la función usando map, que se ejecutará en GPU
@@ -235,24 +209,20 @@ def  generate_kde_fit_functions(known_embeddings, n_fit_samples=None):
     return kde_fit_functions
 
 
-def evaluate_model(model: MonteCarloDropoutModel, x_sample, kde_max, likelihood_method='integration',
-                   known_embeddings=None, embedding_layer=EMBEDDING_LAYER, n_samples=100):
+def evaluate_model(model, x_sample, likelihood_method='normalized',
+                   known_embeddings=None, n_samples=100):
     """ This function evaluates a sample using the features densities uncertainty method.
     Arguments expected:
         - model: keras model: model to be evaluated.
         - x_sample: np.array: sample to be evaluated.
-        - kde_fit_functions: list: list of gaussian_kde functions fitted to the embeddings.
         - likelihood_method: str: method to be used to calculate the uncertainty. Options are 'integration' and
           'normalized'.
         - known_embeddings: np.array: embeddings already known to the model, likely the embeddings from the training set.
           Required if the method is 'normalized'.
-        - embedding_layer: int: index of the layer to be used as embeddings.
     Returns:
         - Tuple(tensorflow.Tensor, np.array): Tuple with uncertainty score (complement of likelihood) for the sample and
           the generated targets.
     """
-    print('Generating an embeddings model')
-    embeddings_model = create_embeddings_model(model, embedding_layer)
 
     print('Calculating sample\'s embeddings')
     sample_embeddings, sample_predictions = embeddings_model(x_sample)
@@ -262,7 +232,7 @@ def evaluate_model(model: MonteCarloDropoutModel, x_sample, kde_max, likelihood_
     if likelihood_method == 'integration':
         feature_densities = integration_likelihood(sample_embeddings, generate_kde_fit_functions(known_embeddings, n_samples))
     elif likelihood_method == 'normalized':
-        feature_densities = calculate_normalized_likelihoods(known_embeddings, sample_embeddings, kde_max, n_samples=n_samples)
+        feature_densities = calculate_normalized_likelihoods(known_embeddings, sample_embeddings, n_samples=n_samples)
 
     reduced_feature_densities = tf.math.reduce_mean(feature_densities, axis=1)
     return 1.0 - reduced_feature_densities, sample_predictions
