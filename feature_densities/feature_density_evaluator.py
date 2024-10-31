@@ -209,7 +209,7 @@ def  generate_kde_fit_functions(known_embeddings, n_fit_samples=None):
     return kde_fit_functions
 
 
-def evaluate_model(model, x_sample, likelihood_method='normalized',
+def evaluate_model(embeddings_model, x_sample, likelihood_method='normalized',
                    known_embeddings=None, n_samples=100):
     """ This function evaluates a sample using the features densities uncertainty method.
     Arguments expected:
