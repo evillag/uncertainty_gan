@@ -167,7 +167,6 @@ def calculate_normalized_likelihoods(known_embeddings, embeddings, n_samples=100
     embeddingsT = tf.transpose(tf.convert_to_tensor(embeddings, dtype=tf.float32))
     known_embeddings_shuffled = tf.random.shuffle(known_embeddings)[:n_samples]
     known_embeddings = tf.convert_to_tensor(known_embeddings_shuffled, dtype=tf.float32)
-    kde_max = tf.convert_to_tensor(kde_max, dtype=tf.float32)
 
     dataset = tf.data.Dataset.from_tensor_slices(tf.range(tf.shape(embeddingsT)[0]))
 
