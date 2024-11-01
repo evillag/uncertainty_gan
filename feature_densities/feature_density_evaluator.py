@@ -44,14 +44,14 @@ def gaussian_kernel(x_values, data, bandwidth):
         - density: tf.Tensor: estimated KDE density values at each point in x_values.
     """
     n = tf.shape(data)[0]
+    x_values = tf.expand_dims(x_values, axis=-1)
+    data = tf.expand_dims(data, axis=-1)
 
-    diff = tf.abs(tf.expand_dims(x_values, axis=1) - data)
-    norm_diff = tf.norm(diff, axis=1, ord='euclidean', keepdims=True)
-    euclidean_diff = tf.tile(norm_diff, [1, diff.shape[1]]) 
-
-    density = tf.exp(-0.5 * (euclidean_diff / bandwidth) ** 2)
-
-    return tf.reduce_sum(density, axis=1) / tf.cast(n, tf.float32) * (bandwidth * tf.sqrt(tf.constant(2 * np.pi, dtype=tf.float32)))
+    diff = tf.expand_dims(x_values, axis=1) - tf.expand_dims(data, axis=0) 
+    norm_diff_squared = tf.reduce_sum(tf.square(diff), axis=-1)  
+    density = tf.exp(-0.5 * (norm_diff_squared / bandwidth**2))
+    
+    return tf.reduce_sum(density, axis=1) / (tf.cast(n, tf.float32) * bandwidth * tf.sqrt(tf.constant(2 * np.pi, dtype=tf.float32)))
 
 
 def fit_kde(embeddings, n_samples=100):
