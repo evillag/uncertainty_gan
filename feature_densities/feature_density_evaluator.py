@@ -49,7 +49,7 @@ def gaussian_kernel(x_values, data, bandwidth):
     norm_diff = tf.norm(diff, axis=1, ord='euclidean', keepdims=True)
     euclidean_diff = tf.tile(norm_diff, [1, diff.shape[1]]) 
 
-    density = tf.exp(-0.5 * (diff / bandwidth) ** 2)
+    density = tf.exp(-0.5 * (euclidean_diff / bandwidth) ** 2)
 
     return tf.reduce_sum(density, axis=1) / tf.cast(n, tf.float32) * (bandwidth * tf.sqrt(tf.constant(2 * np.pi, dtype=tf.float32)))
 
@@ -183,6 +183,40 @@ def calculate_normalized_likelihoods(known_embeddings, embeddings, n_samples=100
     mapped_tensor = tf.stack(list(mapped_results))
     return tf.transpose(mapped_tensor)
 
+def get_histogram(train_embeddings, num_bins):
+    
+  probabilities = []
+  edges = []
+  for i in tf.transpose(train_embeddings):
+    min_val = tf.reduce_min(i)
+    max_val = tf.reduce_max(i)
+      
+    hist_values = tf.histogram_fixed_width(i, [min_val, max_val], nbins=num_bins)
+    probs = hist_values / tf.reduce_sum(hist_values)
+    bin_edges = tf.linspace(min_val, max_val, num_bins + 1)
+
+    probabilities.append(probs)
+    edges.append(bin_edges)
+
+  return tf.stack(probabilities), tf.stack(edges)
+
+def calculate_histogram_likelihoods(embeddings, probs, bins, nbins):
+  embeddingsT = tf.transpose(tf.convert_to_tensor(embeddings, dtype=tf.float32))
+  new_embeddings = []
+  for i in range(embeddingsT.shape[0]):
+      min_hist = tf.reduce_min(bins[i])
+      max_hist = tf.reduce_max(bins[i])
+      bin_width = (max_hist - min_hist) / nbins
+
+      bin_indices = tf.clip_by_value(
+          tf.cast((embeddingsT[i] - min_hist) / bin_width, tf.int32), 0, nbins - 1
+      )
+
+      new_embeddings.append(tf.gather(probs[i], bin_indices)) 
+      
+  embeddings = tf.stack(new_embeddings)
+  return tf.transpose(embeddings)
+
 
 def create_embeddings_model(original_model: MonteCarloDropoutModel, embedding_layer=EMBEDDING_LAYER) -> Model:
     # 1. Set the model in inference mode
@@ -208,7 +242,7 @@ def  generate_kde_fit_functions(known_embeddings, n_fit_samples=None):
     return kde_fit_functions
 
 
-def evaluate_model(embeddings_model, x_sample, likelihood_method='normalized',
+def evaluate_model(embeddings_model, x_sample, probs=None, bins=None, nbins=None, likelihood_method='normalized',
                    known_embeddings=None, n_samples=100):
     """ This function evaluates a sample using the features densities uncertainty method.
     Arguments expected:
@@ -232,6 +266,8 @@ def evaluate_model(embeddings_model, x_sample, likelihood_method='normalized',
         feature_densities = integration_likelihood(sample_embeddings, generate_kde_fit_functions(known_embeddings, n_samples))
     elif likelihood_method == 'normalized':
         feature_densities = calculate_normalized_likelihoods(known_embeddings, sample_embeddings, n_samples=n_samples)
+    elif likelihood_method == 'histograms':
+        feature_densities = calculate_histogram_likelihoods(sample_embeddings, probs, bins, nbins)
 
     reduced_feature_densities = tf.math.reduce_mean(feature_densities, axis=1)
     return 1.0 - reduced_feature_densities, sample_predictions
