@@ -38,8 +38,8 @@ def evaluate_model(model, x_sample, ensemble_size=10, mode='ensemble_inference')
     else:
         generator.single_model_inference_mode()
 
-    print(f"Generating ensemble({ensemble_size}) predictions")
-    for _ in trange(ensemble_size):
+    # print(f"Generating ensemble({ensemble_size}) predictions")
+    for _ in range(ensemble_size):
         prediction_list.append(generator(x_sample))
 
     predicted_values = tf.convert_to_tensor(prediction_list)
