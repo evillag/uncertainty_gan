@@ -242,7 +242,3 @@ def uncertainty_binned2d_fd(x_real, uncertainties, n_bins=5, bin_size=50):
     fig.colorbar(mesh, ax=axes, label='Uncertainty score', orientation='vertical', fraction=0.02, pad=0.01)
     plt.suptitle('Features Densities Heatmap for Different Track Ranges', y=1.05)
     plt.show()
-
-
-def heatmaps_fd():
-    
