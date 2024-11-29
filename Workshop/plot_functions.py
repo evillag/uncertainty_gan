@@ -181,7 +181,7 @@ def uncertainty_binned2d_mcd(x_real, uncertainties, particle_idx, n_bins=5, dll_
         y_data = eta[bin_mask]
         u_data = uncertainties[bin_mask, particle_idx]
 
-        x_bins = np.logspace(np.log10(x_data.min()), np.log10(x_data.max()), bin_size)
+        x_bins = np.linspace(x_data.min(), x_data.max(), bin_size)
         y_bins = np.linspace(y_data.min(), y_data.max(), bin_size)
 
         bin_means, x_edges, y_edges, _ = binned_statistic_2d(
@@ -225,7 +225,7 @@ def uncertainty_binned2d_fd(x_real, uncertainties, n_bins=5, bin_size=50):
         y_data = eta[mask]
         u_data = uncertainties[mask]
 
-        x_bins = np.logspace(np.log10(x_data.min()), np.log10(x_data.max()), bin_size)
+        x_bins = np.linspace(x_data.min(), x_data.max(), bin_size)
         y_bins = np.linspace(y_data.min(), y_data.max(), bin_size)
 
         bin_means, x_edges, y_edges, _ = binned_statistic_2d(
