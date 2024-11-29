@@ -7,6 +7,7 @@ import tf_keras
 import os
 from scipy.stats import linregress
 from scipy.spatial.distance import jensenshannon
+from scipy.stats import binned_statistic_2d
 
 DLL_COLUMNS=['RichDLLe', 'RichDLLk', 'RichDLLmu', 'RichDLLp', 'RichDLLbt']
 
@@ -153,3 +154,95 @@ def plot_all_distances(all_bin_ranges, all_distances, uncertainty_type, dll_colu
 
   plt.show()
   return
+
+def uncertainty_binned2d_mcd(x_real, uncertainties, particle_idx, n_bins=5, dll_columns=DLL_COLUMNS, bin_size=50):
+
+    if not isinstance(x_real, np.ndarray):
+      x_real = x_real.numpy()
+
+    if not isinstance(uncertainties, np.ndarray):
+      uncertainties = uncertainties.numpy()
+
+    momentum = x_real[:, 0]
+    eta = x_real[:, 1]
+    num_tracks = x_real[:, 2]
+
+    bin_edges = np.quantile(num_tracks, np.linspace(0, 1, n_bins + 1))
+    bin_indices = np.digitize(num_tracks, bin_edges, right=True)
+
+    fig, axes = plt.subplots(1, 5, figsize=(16, 3))
+    plt.subplots_adjust(hspace=0.3, wspace=0.3)
+
+    for i in range(n_bins):
+        ax = axes[i]
+
+        bin_mask = bin_indices == (i + 1)
+        x_data = momentum[bin_mask]
+        y_data = eta[bin_mask]
+        u_data = uncertainties[bin_mask, particle_idx]
+
+        x_bins = np.logspace(np.log10(x_data.min()), np.log10(x_data.max()), bin_size)
+        y_bins = np.linspace(y_data.min(), y_data.max(), bin_size)
+
+        bin_means, x_edges, y_edges, _ = binned_statistic_2d(
+            x_data, y_data, u_data, statistic='mean', bins=[x_bins, y_bins]
+        )
+
+        ax = axes[i]
+        ax.set_title(f'Tracks [{bin_edges[i]:.2f}, {bin_edges[i + 1]:.2f}]')
+        mesh = ax.pcolormesh(x_edges, y_edges, bin_means.T, cmap='inferno', shading='auto')
+        ax.set_xscale('log')
+        ax.set_xlabel('Momentum')
+        ax.set_ylabel('Eta')
+
+        plt.suptitle(f'MCD Heatmap for Different Track Ranges for particle {DLL_COLUMNS[particle_idx]}', y=1.05)
+
+    fig.colorbar(mesh, ax=axes, label='Uncertainty score', orientation='vertical', fraction=0.02, pad=0.01)
+    plt.show()
+
+def uncertainty_binned2d_fd(x_real, uncertainties, n_bins=5, bin_size=50):
+
+    if not isinstance(x_real, np.ndarray):
+        x_real = x_real.numpy()
+
+    if not isinstance(uncertainties, np.ndarray):
+        uncertainties = uncertainties.numpy()
+
+    momentum = x_real[:, 0]
+    eta = x_real[:, 1]
+    num_tracks = x_real[:, 2]
+
+    bin_edges = np.quantile(num_tracks, np.linspace(0, 1, n_bins + 1))
+    bin_indices = np.digitize(num_tracks, bin_edges, right=True)
+
+    fig, axes = plt.subplots(1, n_bins, figsize=(16, 3))
+    plt.subplots_adjust(hspace=0.3, wspace=0.3)
+
+    for i in range(n_bins):
+        mask = bin_indices == (i + 1)
+
+        x_data = momentum[mask]
+        y_data = eta[mask]
+        u_data = uncertainties[mask]
+
+        x_bins = np.logspace(np.log10(x_data.min()), np.log10(x_data.max()), bin_size)
+        y_bins = np.linspace(y_data.min(), y_data.max(), bin_size)
+
+        bin_means, x_edges, y_edges, _ = binned_statistic_2d(
+            x_data, y_data, u_data, statistic='mean', bins=[x_bins, y_bins]
+        )
+
+        ax = axes[i]
+        ax.set_title(f'Tracks [{bin_edges[i]:.2f}, {bin_edges[i + 1]:.2f}]')
+        mesh = ax.pcolormesh(x_edges, y_edges, bin_means.T, cmap='inferno', shading='auto')
+        ax.set_xscale('log')
+        ax.set_xlabel('Momentum')
+        ax.set_ylabel('Eta')
+
+    fig.colorbar(mesh, ax=axes, label='Uncertainty score', orientation='vertical', fraction=0.02, pad=0.01)
+    plt.suptitle('Features Densities Heatmap for Different Track Ranges', y=1.05)
+    plt.show()
+
+
+def heatmaps_fd():
+    
