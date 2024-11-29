@@ -191,7 +191,6 @@ def uncertainty_binned2d_mcd(x_real, uncertainties, particle_idx, n_bins=5, dll_
         ax = axes[i]
         ax.set_title(f'Tracks [{bin_edges[i]:.2f}, {bin_edges[i + 1]:.2f}]')
         mesh = ax.pcolormesh(x_edges, y_edges, bin_means.T, cmap='inferno', shading='auto')
-        ax.set_xscale('log')
         ax.set_xlabel('Momentum')
         ax.set_ylabel('Eta')
 
@@ -235,7 +234,6 @@ def uncertainty_binned2d_fd(x_real, uncertainties, n_bins=5, bin_size=50):
         ax = axes[i]
         ax.set_title(f'Tracks [{bin_edges[i]:.2f}, {bin_edges[i + 1]:.2f}]')
         mesh = ax.pcolormesh(x_edges, y_edges, bin_means.T, cmap='inferno', shading='auto')
-        ax.set_xscale('log')
         ax.set_xlabel('Momentum')
         ax.set_ylabel('Eta')
 
