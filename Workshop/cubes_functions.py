@@ -1,5 +1,7 @@
 import torch
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib as plt
 import matplotlib.colors as mcolors
 import matplotlib.gridspec as gridspec
 
