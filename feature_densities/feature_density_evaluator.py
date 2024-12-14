@@ -111,7 +111,7 @@ def tf_integration_likelihood(embeddings, kde_fit_functions, epsilon=0.01):
     n_features = embeddings.shape[1]
     tf_embeddings = tf.convert_to_tensor(embeddings)
 
-    print('Calculating likelihoods with integration method')
+    # print('Calculating likelihoods with integration method')
     for j in trange(n_features):
         def integrate_fn(x):
             return kde_fit_functions[j].integrate_box_1d(x - epsilon, x + epsilon)
@@ -139,7 +139,7 @@ def tf_calculate_normalized_likelihoods(embeddings, kde_fit_functions):
     kde_max_values = [kde_fn(x).max() for kde_fn in kde_fit_functions]
     tf_embeddings = tf.convert_to_tensor(embeddings)
 
-    print('Calculating normalized likelihoods')
+    # print('Calculating normalized likelihoods')
 
     for j in trange(n_features):
         def normalize_kde_fn(x):
@@ -257,10 +257,10 @@ def evaluate_model(embeddings_model, x_sample, probs=None, bins=None, nbins=None
           the generated targets.
     """
 
-    print('Calculating sample\'s embeddings')
+    # print('Calculating sample\'s embeddings')
     sample_embeddings, sample_predictions = embeddings_model(x_sample)
 
-    print('Estimating sample\'s feature densities')
+    # print('Estimating sample\'s feature densities')
     feature_densities = tf.constant(np.ones((x_sample.shape[0], 1)))
     if likelihood_method == 'integration':
         feature_densities = integration_likelihood(sample_embeddings, generate_kde_fit_functions(known_embeddings, n_samples))
