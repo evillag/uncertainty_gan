@@ -166,6 +166,7 @@ src/
 log_dir_tmpfit/
 outputs/
 rich/
+data/
 checkpoints/
 embeddings/
 
